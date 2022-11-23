@@ -2,22 +2,19 @@
 using Kitchen;
 using System.Collections;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 
 namespace DashPing {
 
     [BepInProcess("PlateUp.exe")]
     [BepInPlugin(MOD_ID, MOD_NAME, "0.1.0")]
-    public partial class Mod : KitchenLib.BaseMod {
+    public class Mod : BaseUnityPlugin {
 
         private const string MOD_ID = "dashping";
         private const string MOD_NAME = "Dash Ping";
         private const float INITIAL_SPEED = 3000f;
         private const float DASH_SPEED = 6000f;
         private const float DASH_DURATION = 0.35f;
-
-        public Mod() : base(">=1.1.0", Assembly.GetCallingAssembly()) { }
 
         public void Update() {
             if (isPingDown()) {
