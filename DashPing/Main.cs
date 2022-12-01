@@ -7,14 +7,20 @@ using UnityEngine;
 namespace DashPing {
 
     [BepInProcess("PlateUp.exe")]
-    [BepInPlugin(MOD_ID, MOD_NAME, "0.1.0")]
+    [BepInPlugin(MOD_ID, MOD_NAME, MOD_VERSION)]
     public class Mod : BaseUnityPlugin {
 
-        private const string MOD_ID = "dashping";
-        private const string MOD_NAME = "Dash Ping";
+        public const string MOD_ID = "dashping";
+        public const string MOD_NAME = "Dash Ping";
+        public const string MOD_VERSION = "0.1.2";
+
         private const float INITIAL_SPEED = 3000f;
         private const float DASH_SPEED = 6000f;
         private const float DASH_DURATION = 0.35f;
+
+        public void Awake() {
+            Debug.LogWarning($"BepInEx mod loaded: {MOD_NAME} {MOD_VERSION}");
+        }
 
         public void Update() {
             if (isPingDown()) {
