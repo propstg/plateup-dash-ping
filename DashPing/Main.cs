@@ -5,15 +5,6 @@ using UnityEngine;
 
 namespace KitchenDashPing {
 
-    public class Main : Mod {
-        public const string MOD_NAME = "dashping";
-        public const string MOD_VERSION = "0.2.0";
-
-        public Main() : base(MOD_NAME) {
-            Debug.LogWarning($"{MOD_NAME}: Loaded");
-        }
-    }
-
     public class DashSystem : GenericSystemBase, IModSystem {
 
         private const float INITIAL_SPEED = 3000f;
@@ -21,6 +12,11 @@ namespace KitchenDashPing {
         private const float DASH_DURATION = 0.35f;
         private bool isDashing = false;
         private float dashCooldown;
+
+        protected override void Initialise() {
+            base.Initialise();
+            Debug.Log($"DashPing: loaded.");
+        }
 
         protected override void OnUpdate() {
             if (dashCooldown > 0) {
