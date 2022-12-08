@@ -20,7 +20,7 @@ namespace KitchenDashPing {
         private bool isDashing = false;
         private float dashCooldown;
 
-        public DashSystem() : base(MOD_NAME, MOD_VERSION, "1.1.2", Assembly.GetExecutingAssembly()) {
+        public DashSystem() : base(MOD_ID, MOD_NAME, "blargle", MOD_VERSION, "1.1.2", Assembly.GetExecutingAssembly()) {
             Debug.Log($"Mod loaded: {MOD_ID} {MOD_VERSION}");
         }
 
