@@ -10,7 +10,7 @@ namespace KitchenDashPing {
 
         public const string MOD_ID = "blargle.DashPing";
         public const string MOD_NAME = "Dash Ping";
-        public const string MOD_VERSION = "0.1.4";
+        public const string MOD_VERSION = "0.1.5";
 
         private const float INITIAL_SPEED = 3000f;
         private const float DASH_SPEED = 6000f;
@@ -20,8 +20,11 @@ namespace KitchenDashPing {
         private bool isDashing = false;
         private float dashCooldown;
 
-        public DashSystem() : base(MOD_ID, MOD_NAME, "blargle", MOD_VERSION, "1.1.2", Assembly.GetExecutingAssembly()) {
-            Debug.Log($"Mod loaded: {MOD_ID} {MOD_VERSION}");
+        public DashSystem() : base(MOD_ID, MOD_NAME, "blargle", MOD_VERSION, "1.1.2", Assembly.GetExecutingAssembly()) { }
+
+        protected override void Initialise() {
+            base.Initialise();
+            Debug.Log($"{MOD_ID} v{MOD_VERSION}: initialized");
         }
 
         protected override void OnUpdate() {
