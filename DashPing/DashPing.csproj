@@ -35,6 +35,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Controllers">
+      <HintPath>..\Libraries\Controllers.dll</HintPath>
+    </Reference>
     <Reference Include="Kitchen.Common, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libraries\Kitchen.Common.dll</HintPath>
