@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="MarkerHidingSystem.cs" />
+    <Compile Include="DashPreferences.cs" />
+    <Compile Include="DashMenu.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -42,6 +45,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libraries\Kitchen.Common.dll</HintPath>
     </Reference>
+    <Reference Include="Kitchen.GameData, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" />
     <Reference Include="KitchenLib-Workshop">
       <HintPath>..\Libraries\KitchenLib-Workshop.dll</HintPath>
     </Reference>
@@ -52,6 +56,9 @@
     <Reference Include="KitchenMods, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libraries\KitchenMods.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.Serialization">
+      <HintPath>..\Libraries\Sirenix.Serialization.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Collections, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

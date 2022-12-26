@@ -6,6 +6,8 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using Controllers;
+using KitchenLib.Event;
+using System;
 
 namespace KitchenDashPing {
 
@@ -13,7 +15,7 @@ namespace KitchenDashPing {
 
         public const string MOD_ID = "blargle.DashPing";
         public const string MOD_NAME = "Dash Ping";
-        public const string MOD_VERSION = "0.1.6";
+        public const string MOD_VERSION = "0.1.7";
 
         private const float INITIAL_SPEED = 3000f;
         private const float DASH_SPEED = 6000f;
@@ -22,12 +24,19 @@ namespace KitchenDashPing {
         private const float DASH_REDUCE_PER_UPDATE = 0.03125f;
 
         private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
+        public static bool isRegistered = false;
 
         public DashSystem() : base(MOD_ID, MOD_NAME, "blargle", MOD_VERSION, "1.1.2", Assembly.GetExecutingAssembly()) { }
 
         protected override void Initialise() {
             base.Initialise();
             Debug.Log($"{MOD_ID} v{MOD_VERSION}: initialized");
+            if (!isRegistered) {
+                DashPreferences.registerPreferences();
+                initMainMenu();
+                initPauseMenu();
+                isRegistered = true;
+            }
         }
 
         protected override void OnUpdate() {
@@ -92,6 +101,26 @@ namespace KitchenDashPing {
         private void setSpeedToDash(PlayerView player) => player.Speed = DASH_SPEED;
 
         private void setSpeedToNormal(PlayerView player) => player.Speed = INITIAL_SPEED;
+
+        private void initMainMenu() {
+            Events.PreferenceMenu_MainMenu_SetupEvent += (s, args) => {
+                Type type = args.instance.GetType().GetGenericArguments()[0];
+                args.mInfo.Invoke(args.instance, new object[] { MOD_NAME, typeof(DashMenu<>).MakeGenericType(type), false });
+            };
+            Events.PreferenceMenu_MainMenu_CreateSubmenusEvent += (s, args) => {
+                args.Menus.Add(typeof(DashMenu<MainMenuAction>), new DashMenu<MainMenuAction>(args.Container, args.Module_list));
+            };
+        }
+
+        private void initPauseMenu() {
+            Events.PreferenceMenu_PauseMenu_SetupEvent += (s, args) => {
+                Type type = args.instance.GetType().GetGenericArguments()[0];
+                args.mInfo.Invoke(args.instance, new object[] { MOD_NAME, typeof(DashMenu<>).MakeGenericType(type), false });
+            };
+            Events.PreferenceMenu_PauseMenu_CreateSubmenusEvent += (s, args) => {
+                args.Menus.Add(typeof(DashMenu<PauseMenuAction>), new DashMenu<PauseMenuAction>(args.Container, args.Module_list));
+            };
+        }
     }
 
     class DashStatus {
