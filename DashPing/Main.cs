@@ -15,7 +15,7 @@ namespace KitchenDashPing {
 
         public const string MOD_ID = "blargle.DashPing";
         public const string MOD_NAME = "Dash Ping";
-        public const string MOD_VERSION = "0.1.7";
+        public const string MOD_VERSION = "0.1.8";
 
         private const float INITIAL_SPEED = 3000f;
         private const float DASH_SPEED = 6000f;
@@ -26,14 +26,13 @@ namespace KitchenDashPing {
         private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
         public static bool isRegistered = false;
 
-        public DashSystem() : base(MOD_ID, MOD_NAME, "blargle", MOD_VERSION, "1.1.2", Assembly.GetExecutingAssembly()) { }
+        public DashSystem() : base(MOD_ID, MOD_NAME, "blargle", MOD_VERSION, "1.1.3", Assembly.GetExecutingAssembly()) { }
 
         protected override void Initialise() {
             base.Initialise();
-            Debug.Log($"{MOD_ID} v{MOD_VERSION}: initialized");
+            Debug.Log($"[{MOD_ID}] v{MOD_VERSION} initialized");
             if (!isRegistered) {
                 DashPreferences.registerPreferences();
-                initMainMenu();
                 initPauseMenu();
                 isRegistered = true;
             }
@@ -102,21 +101,8 @@ namespace KitchenDashPing {
 
         private void setSpeedToNormal(PlayerView player) => player.Speed = INITIAL_SPEED;
 
-        private void initMainMenu() {
-            Events.PreferenceMenu_MainMenu_SetupEvent += (s, args) => {
-                Type type = args.instance.GetType().GetGenericArguments()[0];
-                args.mInfo.Invoke(args.instance, new object[] { MOD_NAME, typeof(DashMenu<>).MakeGenericType(type), false });
-            };
-            Events.PreferenceMenu_MainMenu_CreateSubmenusEvent += (s, args) => {
-                args.Menus.Add(typeof(DashMenu<MainMenuAction>), new DashMenu<MainMenuAction>(args.Container, args.Module_list));
-            };
-        }
-
         private void initPauseMenu() {
-            Events.PreferenceMenu_PauseMenu_SetupEvent += (s, args) => {
-                Type type = args.instance.GetType().GetGenericArguments()[0];
-                args.mInfo.Invoke(args.instance, new object[] { MOD_NAME, typeof(DashMenu<>).MakeGenericType(type), false });
-            };
+            ModsPreferencesMenu<PauseMenuAction>.RegisterMenu(MOD_NAME, typeof(DashMenu<PauseMenuAction>), typeof(PauseMenuAction));
             Events.PreferenceMenu_PauseMenu_CreateSubmenusEvent += (s, args) => {
                 args.Menus.Add(typeof(DashMenu<PauseMenuAction>), new DashMenu<PauseMenuAction>(args.Container, args.Module_list));
             };
