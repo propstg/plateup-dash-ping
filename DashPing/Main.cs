@@ -18,10 +18,10 @@ namespace KitchenDashPing {
         public const string MOD_VERSION = "0.1.8";
 
         private const float INITIAL_SPEED = 3000f;
-        private const float DASH_SPEED = 6000f;
-        private const float DASH_OVERALL_COOLDOWN = 0.75f;
-        private const float DASH_DURATION = 0.35f;
+        private const float DASH_SPEED = 12000f;
+        private const float DASH_OVERALL_COOLDOWN = 0.9f;
         private const float DASH_REDUCE_PER_UPDATE = 0.03125f;
+        private const float DASH_DURATION = DASH_REDUCE_PER_UPDATE * 10;
 
         private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
         public static bool isRegistered = false;
@@ -85,10 +85,8 @@ namespace KitchenDashPing {
             PlayerView.ViewData viewData = (PlayerView.ViewData)fieldInfo.GetValue(player);
             ButtonState buttonState = viewData.Inputs.State.SecondaryAction2;
 
-            return buttonState == ButtonState.Pressed ||
-                buttonState == ButtonState.Held ||
-                buttonState == ButtonState.Released ||
-                buttonState == ButtonState.Consumed;
+            // if the HoldButton option is used, a held dash button is allowed as well
+            return buttonState == ButtonState.Pressed || (DashPreferences.isHoldButton() == true && buttonState == ButtonState.Held);
         }
 
         private void returnSpeedToNormal(int playerId) {
