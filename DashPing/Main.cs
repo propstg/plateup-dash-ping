@@ -7,7 +7,6 @@ using System.Reflection;
 using UnityEngine;
 using Controllers;
 using KitchenLib.Event;
-using System;
 
 namespace KitchenDashPing {
 
@@ -15,7 +14,8 @@ namespace KitchenDashPing {
 
         public const string MOD_ID = "blargle.DashPing";
         public const string MOD_NAME = "Dash Ping";
-        public const string MOD_VERSION = "0.1.8";
+        public const string MOD_VERSION = "0.1.9";
+        public const string MOD_AUTHOR = "blargle";
 
         private const float INITIAL_SPEED = 3000f;
         private const float DASH_SPEED = 12000f;
@@ -26,16 +26,12 @@ namespace KitchenDashPing {
         private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
         public static bool isRegistered = false;
 
-        public DashSystem() : base(MOD_ID, MOD_NAME, "blargle", MOD_VERSION, "1.1.3", Assembly.GetExecutingAssembly()) { }
+        public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, "1.1.3", Assembly.GetExecutingAssembly()) { }
 
-        protected override void Initialise() {
-            base.Initialise();
+        protected override void OnInitialise() {
             Debug.Log($"[{MOD_ID}] v{MOD_VERSION} initialized");
-            if (!isRegistered) {
-                DashPreferences.registerPreferences();
-                initPauseMenu();
-                isRegistered = true;
-            }
+            DashPreferences.registerPreferences();
+            initPauseMenu();
         }
 
         protected override void OnUpdate() {
@@ -63,6 +59,10 @@ namespace KitchenDashPing {
 
         private void handleDashPressedForPlayer(PlayerView player) {
             int playerId = player.GetInstanceID();
+
+            if (player.Speed > INITIAL_SPEED) {
+                return;
+            }
 
             if (statuses.TryGetValue(playerId, out DashStatus status)) {
                 if (status.DashCooldown <= 0) {
