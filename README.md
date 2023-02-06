@@ -12,3 +12,6 @@ Note: This mod only works through the workshop.
 ## Installation
 
 * Install through the [Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2897280885)
+
+## Acknowledgements
+* Thanks to @Crylion for helping make it feel more like Overcooked
