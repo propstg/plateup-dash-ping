@@ -86,7 +86,7 @@ namespace KitchenDashPing {
             ButtonState buttonState = viewData.Inputs.State.SecondaryAction2;
 
             // if the HoldButton option is used, a held dash button is allowed as well
-            return buttonState == ButtonState.Pressed || (DashPreferences.isHoldButton() == true && buttonState == ButtonState.Held);
+            return buttonState == ButtonState.Pressed || (DashPreferences.isHoldButton() && buttonState == ButtonState.Held);
         }
 
         private void returnSpeedToNormal(int playerId) {

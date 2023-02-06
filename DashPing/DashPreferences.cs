@@ -9,7 +9,7 @@ namespace KitchenDashPing {
 
         public static void registerPreferences() {
             Preferences.AddPreference<bool>(new BoolPreference(ShowMarkerPref, true));
-            Preferences.AddPreference<bool>(new BoolPreference(HoldButtonPref, false));
+            Preferences.AddPreference<bool>(new BoolPreference(HoldButtonPref, true));
             Preferences.Load();
         }
 
