@@ -1,12 +1,14 @@
 ﻿using Kitchen;
+using Kitchen.Components;
 using KitchenLib;
 using KitchenLib.Utils;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.VFX;
 using Controllers;
 using KitchenLib.Event;
+using HarmonyLib;
 
 namespace KitchenDashPing {
 
@@ -17,16 +19,79 @@ namespace KitchenDashPing {
         public const string MOD_VERSION = "0.1.9";
         public const string MOD_AUTHOR = "blargle";
 
-        private const float INITIAL_SPEED = 3000f;
-        private const float DASH_SPEED = 12000f;
-        private const float DASH_OVERALL_COOLDOWN = 0.9f;
-        private const float DASH_REDUCE_PER_UPDATE = 0.03125f;
-        private const float DASH_DURATION = DASH_REDUCE_PER_UPDATE * 10;
-
-        private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
-        public static bool isRegistered = false;
-
         public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, "1.1.3", Assembly.GetExecutingAssembly()) { }
+
+        [HarmonyPatch(typeof(PlayerView), "Update")]
+        class PlayerView_Patch
+        {
+
+            private const float DASH_COOLDOWN = 1.9f;
+            private const float COOLDOWN_REDUCE_PER_UPDATE = 0.03125f;
+            private static Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
+
+            private static void handleDecreasingCooldowns(int playerId) {
+                if (statuses.TryGetValue(playerId, out DashStatus status)) {
+                    if (status.DashCooldown > 0 && !status.CanDash) {
+                        Debug.Log($"[{MOD_ID}] v{MOD_VERSION} Cooldown: {status.DashCooldown} to {status.DashCooldown - UnityEngine.Time.deltaTime}");
+                        status.DashCooldown -= UnityEngine.Time.deltaTime;
+                    } else if (!status.CanDash) {
+                        Debug.Log($"[{MOD_ID}] v{MOD_VERSION} Cooldown Over for {playerId}!");
+                        status.CanDash = true;
+                    }
+                }
+
+        }
+
+            public static void Postfix (
+                ref PlayerView __instance,
+                ref Rigidbody ___Rigidbody,
+                ref VisualEffect ___Footsteps,
+                ref SoundSource ___FootstepSound,
+                ref bool ___FootstepsActive,
+                int ___MovementSpeed,
+                Animator ___Animator
+            )
+            {
+                int playerId = __instance.GetInstanceID();
+                handleDecreasingCooldowns(playerId);
+
+                ___Rigidbody.collisionDetectionMode = CollisionDetectionMode.Discrete;
+                FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Data");
+
+                PlayerView.ViewData viewData = (PlayerView.ViewData)fieldInfo.GetValue(__instance);
+                ButtonState buttonState = viewData.Inputs.State.SecondaryAction2;
+
+
+                if (!statuses.TryGetValue(playerId, out DashStatus status)) {
+                     DashStatus newStatus = new DashStatus {
+                        DashCooldown = 0f,
+                        CanDash = true
+                    };
+                    statuses.Add(playerId, newStatus);
+                }
+
+                bool isStopMovingPressed = viewData.Inputs.State.StopMoving == ButtonState.Held || viewData.Inputs.State.StopMoving == ButtonState.Pressed;
+
+                    if (buttonState == ButtonState.Pressed && !isStopMovingPressed && status.CanDash) {
+
+                        Vector3 force = __instance.GetPosition().Forward(__instance.Speed);
+                        force.y = 0f;
+                        ___Rigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                        ___Rigidbody.AddForce(force, ForceMode.Force);
+                        status.CanDash = false;
+                        status.DashCooldown = DASH_COOLDOWN;
+
+                        // honestly doesn't really do anything in the very short timespan until the next update
+                        // but it seems more correct to do so anyway
+                        /*___Footsteps.Play();
+                        ___FootstepSound.Play();
+                        ___FootstepsActive = true;
+                        ___Animator.SetFloat(___MovementSpeed, 1);*/
+                    }
+
+
+		    }
+        }
 
         protected override void OnInitialise() {
             Debug.Log($"[{MOD_ID}] v{MOD_VERSION} initialized");
@@ -34,51 +99,7 @@ namespace KitchenDashPing {
             initPauseMenu();
         }
 
-        protected override void OnUpdate() {
-            handleDecreasingCooldowns();
-
-            PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
-                .Where(isPingDownForPlayer).ToList()
-                .ForEach(handleDashPressedForPlayer);
-        }
-
-        private void handleDecreasingCooldowns() {
-            foreach (KeyValuePair<int, DashStatus> entry in statuses) {
-                DashStatus status = entry.Value;
-
-                if (status.DashCooldown > 0) {
-                    status.DashCooldown -= DASH_REDUCE_PER_UPDATE;
-                }
-
-                if (status.IsDashing && status.DashCooldown <= DASH_OVERALL_COOLDOWN - DASH_DURATION) {
-                    status.IsDashing = false;
-                    returnSpeedToNormal(entry.Key);
-                }
-            }
-        }
-
-        private void handleDashPressedForPlayer(PlayerView player) {
-            int playerId = player.GetInstanceID();
-
-            if (player.Speed > INITIAL_SPEED) {
-                return;
-            }
-
-            if (statuses.TryGetValue(playerId, out DashStatus status)) {
-                if (status.DashCooldown <= 0) {
-                    status.IsDashing = true;
-                    status.DashCooldown = DASH_OVERALL_COOLDOWN;
-                    setSpeedToDash(player);
-                }
-            } else {
-                DashStatus newStatus = new DashStatus {
-                    IsDashing = true,
-                    DashCooldown = DASH_OVERALL_COOLDOWN
-                };
-                statuses.Add(playerId, newStatus);
-                setSpeedToDash(player);
-            }
-        }
+        protected override void OnUpdate() {}
 
         private bool isPingDownForPlayer(PlayerView player) {
             FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Data");
@@ -89,16 +110,6 @@ namespace KitchenDashPing {
             return buttonState == ButtonState.Pressed || (DashPreferences.isHoldButton() && buttonState == ButtonState.Held);
         }
 
-        private void returnSpeedToNormal(int playerId) {
-            List<PlayerView> lists = PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
-                .Where(playerView => playerId == playerView.GetInstanceID()).ToList();
-            lists.ForEach(setSpeedToNormal);
-        }
-
-        private void setSpeedToDash(PlayerView player) => player.Speed = DASH_SPEED;
-
-        private void setSpeedToNormal(PlayerView player) => player.Speed = INITIAL_SPEED;
-
         private void initPauseMenu() {
             ModsPreferencesMenu<PauseMenuAction>.RegisterMenu(MOD_NAME, typeof(DashMenu<PauseMenuAction>), typeof(PauseMenuAction));
             Events.PreferenceMenu_PauseMenu_CreateSubmenusEvent += (s, args) => {
@@ -108,7 +119,7 @@ namespace KitchenDashPing {
     }
 
     class DashStatus {
-        public bool IsDashing;
+        public bool CanDash = true;
         public float DashCooldown;
     }
 }
