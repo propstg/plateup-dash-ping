@@ -19,9 +19,8 @@ namespace KitchenDashPing {
 
         private const float INITIAL_SPEED = 3000f;
         private const float DASH_SPEED = 12000f;
-        private const float DASH_OVERALL_COOLDOWN = 0.9f;
-        private const float DASH_REDUCE_PER_UPDATE = 0.03125f;
-        private const float DASH_DURATION = DASH_REDUCE_PER_UPDATE * 10;
+        private const float DASH_OVERALL_COOLDOWN = 0.45f;
+        private const float DASH_DURATION = 0.18f;
 
         private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
         public static bool isRegistered = false;
@@ -47,7 +46,7 @@ namespace KitchenDashPing {
                 DashStatus status = entry.Value;
 
                 if (status.DashCooldown > 0) {
-                    status.DashCooldown -= DASH_REDUCE_PER_UPDATE;
+                    status.DashCooldown -= UnityEngine.Time.deltaTime;
                 }
 
                 if (status.IsDashing && status.DashCooldown <= DASH_OVERALL_COOLDOWN - DASH_DURATION) {
