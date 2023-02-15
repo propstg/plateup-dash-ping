@@ -5,7 +5,6 @@ using KitchenLib.Utils;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.VFX;
 using Controllers;
 using KitchenLib.Event;
 using HarmonyLib;
@@ -68,12 +67,7 @@ namespace KitchenDashPing {
 
         public static void Postfix (
             ref PlayerView __instance,
-            ref Rigidbody ___Rigidbody,
-            ref VisualEffect ___Footsteps,
-            ref SoundSource ___FootstepSound,
-            ref bool ___FootstepsActive,
-            int ___MovementSpeed,
-            Animator ___Animator
+            ref Rigidbody ___Rigidbody
         )
         {
             float deltaTime = UnityEngine.Time.deltaTime;
