@@ -44,7 +44,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Harmony">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\workshop\content\1599600\2898033283\0Harmony.dll</HintPath>
+      <HintPath>$(PlateUpGameFolder)\..\..\workshop\content\1599600\2898033283\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Controllers, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
