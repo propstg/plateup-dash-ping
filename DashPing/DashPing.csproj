@@ -43,9 +43,6 @@
     <PlateUpGameFolder>E:\Steam\steamapps\common\PlateUp</PlateUpGameFolder>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Harmony">
-      <HintPath>$(PlateUpGameFolder)\..\..\workshop\content\1599600\2898033283\0Harmony.dll</HintPath>
-    </Reference>
     <Reference Include="Controllers, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(PlateUpGameFolder)\PlateUp\PlateUp_Data\Managed\Controllers.dll</HintPath>
