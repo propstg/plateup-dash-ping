@@ -2,8 +2,8 @@
 using KitchenLib;
 using KitchenLib.Utils;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
+using System.Linq;
 using UnityEngine;
 using Controllers;
 using KitchenLib.Event;
@@ -17,13 +17,16 @@ namespace KitchenDashPing {
         public const string MOD_VERSION = "0.1.9";
         public const string MOD_AUTHOR = "blargle";
 
-        private const float INITIAL_SPEED = 3000f;
-        private const float DASH_SPEED = 12000f;
-        private const float DASH_OVERALL_COOLDOWN = 0.9f;
-        private const float DASH_REDUCE_PER_UPDATE = 0.03125f;
-        private const float DASH_DURATION = DASH_REDUCE_PER_UPDATE * 10;
+         // shortest possible time between
+        private const float DASH_COOLDOWN = 0.45f;
+        // amount of time the dash force should be distributed over
+        private const float DASH_DURATION = 0.15f;
+        // total amount of force the dash should apply
+        // calculated to achieve the same distance as previous implementation
+        private const float DASH_TOTAL_FORCE = 2160f;
 
         private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
+        private float deltaTime;
         public static bool isRegistered = false;
 
         public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, "1.1.3", Assembly.GetExecutingAssembly()) { }
@@ -35,24 +38,32 @@ namespace KitchenDashPing {
         }
 
         protected override void OnUpdate() {
-            handleDecreasingCooldowns();
+            deltaTime = UnityEngine.Time.deltaTime;
 
             PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
                 .Where(isPingDownForPlayer).ToList()
                 .ForEach(handleDashPressedForPlayer);
+
+            // Also handle the decreasing cooldowns per player view to have access to the rigidbody
+            PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
+                .ForEach(handleDecreasingCooldowns);
         }
 
-        private void handleDecreasingCooldowns() {
-            foreach (KeyValuePair<int, DashStatus> entry in statuses) {
-                DashStatus status = entry.Value;
+        private void handleDecreasingCooldowns(PlayerView player) {
+            int playerId = player.GetInstanceID();
+
+            if (statuses.TryGetValue(playerId, out DashStatus status)) {
 
                 if (status.DashCooldown > 0) {
-                    status.DashCooldown -= DASH_REDUCE_PER_UPDATE;
+                    if (status.DashCooldown - deltaTime < 0) {
+                        status.DashCooldown = 0;
+                    } else {
+                        status.DashCooldown -= deltaTime;
+                    }
                 }
 
-                if (status.IsDashing && status.DashCooldown <= DASH_OVERALL_COOLDOWN - DASH_DURATION) {
-                    status.IsDashing = false;
-                    returnSpeedToNormal(entry.Key);
+                if (status.DashCooldown > DASH_COOLDOWN - DASH_DURATION) {
+                     dashForward(player);
                 }
             }
         }
@@ -60,23 +71,15 @@ namespace KitchenDashPing {
         private void handleDashPressedForPlayer(PlayerView player) {
             int playerId = player.GetInstanceID();
 
-            if (player.Speed > INITIAL_SPEED) {
-                return;
-            }
-
             if (statuses.TryGetValue(playerId, out DashStatus status)) {
                 if (status.DashCooldown <= 0) {
-                    status.IsDashing = true;
-                    status.DashCooldown = DASH_OVERALL_COOLDOWN;
-                    setSpeedToDash(player);
+                    status.DashCooldown = DASH_COOLDOWN;
                 }
             } else {
                 DashStatus newStatus = new DashStatus {
-                    IsDashing = true,
-                    DashCooldown = DASH_OVERALL_COOLDOWN
+                    DashCooldown = DASH_COOLDOWN
                 };
                 statuses.Add(playerId, newStatus);
-                setSpeedToDash(player);
             }
         }
 
@@ -89,15 +92,14 @@ namespace KitchenDashPing {
             return buttonState == ButtonState.Pressed || (DashPreferences.isHoldButton() && buttonState == ButtonState.Held);
         }
 
-        private void returnSpeedToNormal(int playerId) {
-            List<PlayerView> lists = PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
-                .Where(playerView => playerId == playerView.GetInstanceID()).ToList();
-            lists.ForEach(setSpeedToNormal);
+        private void dashForward(PlayerView player) {
+            FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
+            Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
+
+            Vector3 force = player.GetPosition().Forward(DASH_TOTAL_FORCE * (deltaTime / DASH_DURATION));
+            force.y = 0f;
+            rigidBody.AddForce(force, ForceMode.Force);
         }
-
-        private void setSpeedToDash(PlayerView player) => player.Speed = DASH_SPEED;
-
-        private void setSpeedToNormal(PlayerView player) => player.Speed = INITIAL_SPEED;
 
         private void initPauseMenu() {
             ModsPreferencesMenu<PauseMenuAction>.RegisterMenu(MOD_NAME, typeof(DashMenu<PauseMenuAction>), typeof(PauseMenuAction));
@@ -108,7 +110,6 @@ namespace KitchenDashPing {
     }
 
     class DashStatus {
-        public bool IsDashing;
         public float DashCooldown;
     }
 }
