@@ -60,11 +60,16 @@ namespace KitchenDashPing {
                     } else {
                         status.DashCooldown -= deltaTime;
                     }
+
+                    if (status.DashCooldown > DASH_COOLDOWN - DASH_DURATION) {
+                        dashForward(player);
+                    } else {
+                        FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
+                        Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
+                        rigidBody.collisionDetectionMode = CollisionDetectionMode.Discrete;
+                    }
                 }
 
-                if (status.DashCooldown > DASH_COOLDOWN - DASH_DURATION) {
-                     dashForward(player);
-                }
             }
         }
 
@@ -74,6 +79,9 @@ namespace KitchenDashPing {
             if (statuses.TryGetValue(playerId, out DashStatus status)) {
                 if (status.DashCooldown <= 0) {
                     status.DashCooldown = DASH_COOLDOWN;
+                    FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
+                    Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
+                    rigidBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 }
             } else {
                 DashStatus newStatus = new DashStatus {
