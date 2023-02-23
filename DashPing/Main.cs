@@ -64,6 +64,7 @@ namespace KitchenDashPing {
                     if (status.DashCooldown > DASH_COOLDOWN - DASH_DURATION) {
                         dashForward(player);
                     } else {
+                        // Return player collision mode to discrete again, after the dash is done
                         FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
                         Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
                         rigidBody.collisionDetectionMode = CollisionDetectionMode.Discrete;
@@ -78,10 +79,11 @@ namespace KitchenDashPing {
 
             if (statuses.TryGetValue(playerId, out DashStatus status)) {
                 if (status.DashCooldown <= 0) {
-                    status.DashCooldown = DASH_COOLDOWN;
+                    // Set the player collision mode to one that should be better suited for fast moving objects for the duration of the dash
                     FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
                     Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
                     rigidBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                    status.DashCooldown = DASH_COOLDOWN;
                 }
             } else {
                 DashStatus newStatus = new DashStatus {
