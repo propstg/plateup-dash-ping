@@ -14,10 +14,10 @@ namespace KitchenDashPing {
 
         public const string MOD_ID = "blargle.DashPing";
         public const string MOD_NAME = "Dash Ping";
-        public const string MOD_VERSION = "0.1.9";
+        public const string MOD_VERSION = "0.2.0";
         public const string MOD_AUTHOR = "blargle";
 
-         // shortest possible time between
+        // shortest possible time between
         private const float DASH_COOLDOWN = 0.45f;
         // amount of time the dash force should be distributed over
         private const float DASH_DURATION = 0.15f;
@@ -26,10 +26,9 @@ namespace KitchenDashPing {
         private const float DASH_TOTAL_FORCE = 2160f;
 
         private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
-        private float deltaTime;
-        public static bool isRegistered = false;
+        private float deltaTimeThisUpdate;
 
-        public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, "1.1.3", Assembly.GetExecutingAssembly()) { }
+        public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, ">=1.1.4", Assembly.GetExecutingAssembly()) { }
 
         protected override void OnInitialise() {
             Debug.Log($"[{MOD_ID}] v{MOD_VERSION} initialized");
@@ -38,7 +37,7 @@ namespace KitchenDashPing {
         }
 
         protected override void OnUpdate() {
-            deltaTime = UnityEngine.Time.deltaTime;
+            deltaTimeThisUpdate = UnityEngine.Time.deltaTime;
 
             PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
                 .Where(isPingDownForPlayer).ToList()
@@ -55,10 +54,10 @@ namespace KitchenDashPing {
             if (statuses.TryGetValue(playerId, out DashStatus status)) {
 
                 if (status.DashCooldown > 0) {
-                    if (status.DashCooldown - deltaTime < 0) {
+                    if (status.DashCooldown - deltaTimeThisUpdate < 0) {
                         status.DashCooldown = 0;
                     } else {
-                        status.DashCooldown -= deltaTime;
+                        status.DashCooldown -= deltaTimeThisUpdate;
                     }
                 }
 
@@ -86,17 +85,27 @@ namespace KitchenDashPing {
         private bool isPingDownForPlayer(PlayerView player) {
             FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Data");
             PlayerView.ViewData viewData = (PlayerView.ViewData)fieldInfo.GetValue(player);
-            ButtonState buttonState = viewData.Inputs.State.SecondaryAction2;
+            ButtonState pingButton = viewData.Inputs.State.SecondaryAction2;
+            ButtonState stopMovingButton = viewData.Inputs.State.StopMoving;
 
-            // if the HoldButton option is used, a held dash button is allowed as well
-            return buttonState == ButtonState.Pressed || (DashPreferences.isHoldButton() && buttonState == ButtonState.Held);
+            return isPingButtonPressedOrHeld(pingButton) && isStopMovingNotPressedOrHeld(stopMovingButton);
         }
+
+        private bool isPingButtonPressedOrHeld(ButtonState pingButton) => isButtonPressed(pingButton) || isPingButtonHeldIfAllowed(pingButton);
+
+        private bool isPingButtonHeldIfAllowed(ButtonState pingButton) => DashPreferences.isHoldButton() && isButtonHeld(pingButton);
+
+        private bool isStopMovingNotPressedOrHeld(ButtonState stopMovingButton) => !isButtonPressed(stopMovingButton) && !isButtonHeld(stopMovingButton);
+
+        private bool isButtonPressed(ButtonState button) => button == ButtonState.Pressed;
+
+        private bool isButtonHeld(ButtonState button) => button == ButtonState.Held;
 
         private void dashForward(PlayerView player) {
             FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
             Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
 
-            Vector3 force = player.GetPosition().Forward(DASH_TOTAL_FORCE * (deltaTime / DASH_DURATION));
+            Vector3 force = player.GetPosition().Forward(DASH_TOTAL_FORCE * (deltaTimeThisUpdate / DASH_DURATION));
             force.y = 0f;
             rigidBody.AddForce(force, ForceMode.Force);
         }
@@ -107,9 +116,5 @@ namespace KitchenDashPing {
                 args.Menus.Add(typeof(DashMenu<PauseMenuAction>), new DashMenu<PauseMenuAction>(args.Container, args.Module_list));
             };
         }
-    }
-
-    class DashStatus {
-        public float DashCooldown;
     }
 }
