@@ -61,7 +61,8 @@ namespace KitchenDashPing {
                     }
 
                     if (status.DashCooldown > DASH_COOLDOWN - DASH_DURATION) {
-                        dashForward(player);
+                        dashForward(player, DASH_TOTAL_FORCE * (deltaTimeThisUpdate / DASH_DURATION) / 2);
+                        dashForward(player, DASH_TOTAL_FORCE * (deltaTimeThisUpdate / DASH_DURATION) / 2);
                     } else {
                         // Return player collision mode to discrete again, after the dash is done
                         FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
@@ -111,11 +112,11 @@ namespace KitchenDashPing {
 
         private bool isButtonHeld(ButtonState button) => button == ButtonState.Held;
 
-        private void dashForward(PlayerView player) {
+        private void dashForward(PlayerView player, float amount) {
             FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
             Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
 
-            Vector3 force = player.GetPosition().Forward(DASH_TOTAL_FORCE * (deltaTimeThisUpdate / DASH_DURATION));
+            Vector3 force = player.GetPosition().Forward(amount);
             force.y = 0f;
             rigidBody.AddForce(force, ForceMode.Force);
         }
