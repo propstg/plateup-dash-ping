@@ -1,6 +1,7 @@
 ﻿using Kitchen;
 using KitchenLib;
 using KitchenLib.Utils;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
@@ -20,13 +21,12 @@ namespace KitchenDashPing {
         // shortest possible time between
         private const float DASH_COOLDOWN = 0.45f;
         // amount of time the dash force should be distributed over
-        private const float DASH_DURATION = 0.15f;
+        private const float DASH_DURATION = 0.20f;
         // total amount of force the dash should apply
         // calculated to achieve the same distance as previous implementation
         private const float DASH_TOTAL_FORCE = 2160f;
 
         private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
-        private float deltaTimeThisUpdate;
 
         public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, ">=1.1.4", Assembly.GetExecutingAssembly()) { }
 
@@ -37,33 +37,30 @@ namespace KitchenDashPing {
         }
 
         protected override void OnUpdate() {
-            deltaTimeThisUpdate = UnityEngine.Time.deltaTime;
-
             PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
                 .Where(isPingDownForPlayer).ToList()
                 .ForEach(handleDashPressedForPlayer);
-
-            // Also handle the decreasing cooldowns per player view to have access to the rigidbody
-            PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
-                .ForEach(handleDecreasingCooldowns);
         }
 
-        private void handleDecreasingCooldowns(PlayerView player) {
+        private IEnumerator handleDecreasingCooldowns(PlayerView player) {
             int playerId = player.GetInstanceID();
-
             if (statuses.TryGetValue(playerId, out DashStatus status)) {
 
-                if (status.DashCooldown > 0) {
-                    if (status.DashCooldown - deltaTimeThisUpdate < 0) {
-                        status.DashCooldown = 0;
-                    } else {
-                        status.DashCooldown -= deltaTimeThisUpdate;
+                while (status.DashCooldown > 0) {
+                    float deltaTime = UnityEngine.Time.fixedDeltaTime;
+                    status.DashCooldown -= deltaTime;
+
+                    if (status.DashCooldown > DASH_COOLDOWN - DASH_DURATION) {
+                        dashForward(player, DASH_TOTAL_FORCE * (deltaTime / DASH_DURATION));
                     }
+                    yield return null;
                 }
 
-                if (status.DashCooldown > DASH_COOLDOWN - DASH_DURATION) {
-                     dashForward(player);
-                }
+                status.DashCooldown = 0;
+                // Return player collision mode to discrete again, after the dash is done
+                FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
+                Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
+                rigidBody.collisionDetectionMode = CollisionDetectionMode.Discrete;
             }
         }
 
@@ -73,13 +70,27 @@ namespace KitchenDashPing {
             if (statuses.TryGetValue(playerId, out DashStatus status)) {
                 if (status.DashCooldown <= 0) {
                     status.DashCooldown = DASH_COOLDOWN;
+                    prepareForDash(player);
                 }
             } else {
                 DashStatus newStatus = new DashStatus {
                     DashCooldown = DASH_COOLDOWN
                 };
                 statuses.Add(playerId, newStatus);
+                prepareForDash(player);
             }
+        }
+
+        /**
+        * Set the collision mode of the player to a more realtime one and start the coroutine to handle the timing dependend stuff
+        */
+        private void prepareForDash(PlayerView player) {
+            // Set the player collision mode to one that should be better suited for fast moving objects for the duration of the dash
+            FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
+            Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
+            rigidBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+
+            player.StartCoroutine(handleDecreasingCooldowns(player));
         }
 
         private bool isPingDownForPlayer(PlayerView player) {
@@ -101,11 +112,11 @@ namespace KitchenDashPing {
 
         private bool isButtonHeld(ButtonState button) => button == ButtonState.Held;
 
-        private void dashForward(PlayerView player) {
+        private void dashForward(PlayerView player, float amount) {
             FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
             Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
 
-            Vector3 force = player.GetPosition().Forward(DASH_TOTAL_FORCE * (deltaTimeThisUpdate / DASH_DURATION));
+            Vector3 force = player.GetPosition().Forward(amount);
             force.y = 0f;
             rigidBody.AddForce(force, ForceMode.Force);
         }
