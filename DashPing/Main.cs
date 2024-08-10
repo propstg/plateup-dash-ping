@@ -4,7 +4,6 @@ using KitchenLib.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
 using Controllers;
 using KitchenLib.Event;
 
@@ -14,7 +13,7 @@ namespace KitchenDashPing {
 
         public const string MOD_ID = "blargle.DashPing";
         public const string MOD_NAME = "Dash Ping";
-        public const string MOD_VERSION = "0.1.9";
+        public const string MOD_VERSION = "0.1.10";
         public const string MOD_AUTHOR = "blargle";
 
         private const float INITIAL_SPEED = 3000f;
@@ -26,7 +25,7 @@ namespace KitchenDashPing {
         private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
         public static bool isRegistered = false;
 
-        public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, "1.1.3", Assembly.GetExecutingAssembly()) { }
+        public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, ">=1.2.0", Assembly.GetExecutingAssembly()) { }
 
         protected override void OnInitialise() {
             Debug.Log($"[{MOD_ID}] v{MOD_VERSION} initialized");
@@ -100,9 +99,9 @@ namespace KitchenDashPing {
         private void setSpeedToNormal(PlayerView player) => player.Speed = INITIAL_SPEED;
 
         private void initPauseMenu() {
-            ModsPreferencesMenu<PauseMenuAction>.RegisterMenu(MOD_NAME, typeof(DashMenu<PauseMenuAction>), typeof(PauseMenuAction));
-            Events.PreferenceMenu_PauseMenu_CreateSubmenusEvent += (s, args) => {
-                args.Menus.Add(typeof(DashMenu<PauseMenuAction>), new DashMenu<PauseMenuAction>(args.Container, args.Module_list));
+            ModsPreferencesMenu<MenuAction>.RegisterMenu(MOD_NAME, typeof(DashMenu<MenuAction>), typeof(MenuAction));
+            Events.PlayerPauseView_SetupMenusEvent += (s, args) => {
+                args.addMenu.Invoke(args.instance, new object[] { typeof(DashMenu<MenuAction>), new DashMenu<MenuAction>(args.instance.ButtonContainer, args.module_list) });
             };
         }
     }
