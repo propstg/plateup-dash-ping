@@ -28,7 +28,7 @@ namespace KitchenDashPing {
 
         private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
 
-        public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, ">=1.1.4", Assembly.GetExecutingAssembly()) { }
+        public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, ">=1.2.0", Assembly.GetExecutingAssembly()) { }
 
         protected override void OnInitialise() {
             Debug.Log($"[{MOD_ID}] v{MOD_VERSION} initialized");
