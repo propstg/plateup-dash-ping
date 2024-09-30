@@ -15,7 +15,7 @@ namespace KitchenDashPing {
 
         public const string MOD_ID = "blargle.DashPing";
         public const string MOD_NAME = "Dash Ping";
-        public const string MOD_VERSION = "0.3.0";
+        public const string MOD_VERSION = "0.1.10";
         public const string MOD_AUTHOR = "blargle";
 
         // shortest possible time between
@@ -124,6 +124,7 @@ namespace KitchenDashPing {
             Vector3 force = player.GetPosition().Forward(amount);
             force.y = 0f;
             rigidBody.AddForce(force, ForceMode.Force);
+
         }
 
         private Rigidbody getRigidBody (PlayerView player) {
