@@ -11,12 +11,12 @@ namespace KitchenDashPing {
 
         protected override void Initialise() {
             base.Initialise();
-            this.Query = this.GetEntityQuery((ComponentType)typeof(CPlayerPing));
+            Query = GetEntityQuery((ComponentType)typeof(CPlayerPing));
         }
 
         protected override void OnUpdate() {
             if (!DashPreferences.isShowMarker()) {
-                this.EntityManager.DestroyEntity(this.Query);
+                EntityManager.DestroyEntity(Query);
             }
         }
     }

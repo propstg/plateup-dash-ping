@@ -8,6 +8,7 @@ Note: This mod only works through the workshop.
 
 * KitchenLib
 * Harmony
+* PreferenceSystem
 
 ## Installation
 

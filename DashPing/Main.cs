@@ -1,4 +1,4 @@
-﻿using Kitchen;
+using Kitchen;
 using KitchenLib;
 using KitchenLib.Utils;
 using System.Collections;
@@ -32,8 +32,11 @@ namespace KitchenDashPing {
 
         protected override void OnInitialise() {
             Debug.Log($"[{MOD_ID}] v{MOD_VERSION} initialized");
+        }
+
+        protected override void OnPostActivate(Mod mod) {
             DashPreferences.registerPreferences();
-            initPauseMenu();
+            DashPreferences.registerMenu();
         }
 
         protected override void OnUpdate() {
