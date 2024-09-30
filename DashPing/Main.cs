@@ -1,13 +1,13 @@
-using Kitchen;
-using KitchenLib;
-using KitchenLib.Utils;
+﻿using KitchenLib;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 using UnityEngine;
 using Controllers;
-using KitchenLib.Event;
+using Kitchen;
+using KitchenMods;
+using PreferenceSystem.Utils;
 
 namespace KitchenDashPing {
 
@@ -15,7 +15,7 @@ namespace KitchenDashPing {
 
         public const string MOD_ID = "blargle.DashPing";
         public const string MOD_NAME = "Dash Ping";
-        public const string MOD_VERSION = "0.2.0";
+        public const string MOD_VERSION = "0.3.0";
         public const string MOD_AUTHOR = "blargle";
 
         // shortest possible time between
@@ -60,9 +60,8 @@ namespace KitchenDashPing {
                 }
 
                 status.DashCooldown = 0;
-                // Return player collision mode to discrete again, after the dash is done
-                FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
-                Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
+
+                Rigidbody rigidBody = getRigidBody(player);
                 rigidBody.collisionDetectionMode = CollisionDetectionMode.Discrete;
             }
         }
@@ -88,9 +87,13 @@ namespace KitchenDashPing {
         * Set the collision mode of the player to a more realtime one and start the coroutine to handle the timing dependend stuff
         */
         private void prepareForDash(PlayerView player) {
+
             // Set the player collision mode to one that should be better suited for fast moving objects for the duration of the dash
-            FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
-            Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
+            Rigidbody rigidBody = getRigidBody(player);
+            if (rigidBody == null) {
+                Debug.LogError("[Dash Ping] " + "Could not get rigidbody");
+                return;
+            }
             rigidBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 
             player.StartCoroutine(handleDecreasingCooldowns(player));
@@ -116,19 +119,22 @@ namespace KitchenDashPing {
         private bool isButtonHeld(ButtonState button) => button == ButtonState.Held;
 
         private void dashForward(PlayerView player, float amount) {
-            FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Rigidbody");
-            Rigidbody rigidBody = (Rigidbody)fieldInfo.GetValue(player);
+            Rigidbody rigidBody = getRigidBody(player);
 
             Vector3 force = player.GetPosition().Forward(amount);
             force.y = 0f;
             rigidBody.AddForce(force, ForceMode.Force);
         }
 
-        private void initPauseMenu() {
-            ModsPreferencesMenu<PauseMenuAction>.RegisterMenu(MOD_NAME, typeof(DashMenu<PauseMenuAction>), typeof(PauseMenuAction));
-            Events.PreferenceMenu_PauseMenu_CreateSubmenusEvent += (s, args) => {
-                args.Menus.Add(typeof(DashMenu<PauseMenuAction>), new DashMenu<PauseMenuAction>(args.Container, args.Module_list));
-            };
+        private Rigidbody getRigidBody (PlayerView player) {
+            FieldInfo movementFieldInfo = ReflectionUtils.GetField<PlayerView>("PlayerMovementComp");
+            PlayerMovementComponent movementComponent = (PlayerMovementComponent)movementFieldInfo.GetValue(player);
+            if (movementComponent.GetType() == typeof(PlayerWalkingComponent)) {
+                FieldInfo rigidbodyFieldInfo = ReflectionUtils.GetField<PlayerWalkingComponent>("Rigidbody");
+                Rigidbody rigidBody = (Rigidbody)rigidbodyFieldInfo.GetValue(movementComponent);
+                return rigidBody;
+            }
+            return null;
         }
     }
 }
