@@ -6,11 +6,11 @@ using System.Linq;
 using UnityEngine;
 using Controllers;
 using Kitchen;
-using KitchenMods;
 using KitchenLib.Event;
 using KitchenLib.Utils;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using KitchenDashPing.settings;
 
 namespace KitchenDashPing {
 
@@ -47,9 +47,11 @@ namespace KitchenDashPing {
         }
 
         protected override void OnUpdate() {
-            PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
-                .Where(isPingDownForPlayer).ToList()
-                .ForEach(handleDashPressedForPlayer);
+            if (DashFlavorType.OVERCOOKED == DashPreferences.getDashFlavor()) {
+                PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
+                    .Where(isPingDownForPlayer).ToList()
+                    .ForEach(handleDashPressedForPlayer);
+            }
         }
 
         private IEnumerator handleDecreasingCooldowns(PlayerView player) {
@@ -94,7 +96,6 @@ namespace KitchenDashPing {
         * Set the collision mode of the player to a more realtime one and start the coroutine to handle the timing dependend stuff
         */
         private void prepareForDash(PlayerView player) {
-
             // Set the player collision mode to one that should be better suited for fast moving objects for the duration of the dash
             Rigidbody rigidBody = getRigidBody(player);
             if (rigidBody == null) {
