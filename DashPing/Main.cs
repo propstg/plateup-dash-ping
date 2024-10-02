@@ -7,7 +7,10 @@ using UnityEngine;
 using Controllers;
 using Kitchen;
 using KitchenMods;
-using PreferenceSystem.Utils;
+using KitchenLib.Event;
+using KitchenLib.Utils;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace KitchenDashPing {
 
@@ -15,8 +18,8 @@ namespace KitchenDashPing {
 
         public const string MOD_ID = "blargle.DashPing";
         public const string MOD_NAME = "Dash Ping";
-        public const string MOD_VERSION = "0.1.10";
         public const string MOD_AUTHOR = "blargle";
+        public static readonly string MOD_VERSION = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.ToString();
 
         // shortest possible time between
         private const float DASH_COOLDOWN = 0.45f;
@@ -31,12 +34,16 @@ namespace KitchenDashPing {
         public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, ">=1.2.0", Assembly.GetExecutingAssembly()) { }
 
         protected override void OnInitialise() {
-            Debug.Log($"[{MOD_ID}] v{MOD_VERSION} initialized");
+            Log($"v{MOD_VERSION} initialized");
+            DashPreferences.registerPreferences();
+            initPauseMenu();
         }
 
-        protected override void OnPostActivate(Mod mod) {
-            DashPreferences.registerPreferences();
-            DashPreferences.registerMenu();
+        private void initPauseMenu() {
+            ModsPreferencesMenu<MenuAction>.RegisterMenu(MOD_NAME, typeof(DashMenu<MenuAction>), typeof(MenuAction));
+            Events.PlayerPauseView_SetupMenusEvent += (s, args) => {
+                args.addMenu.Invoke(args.instance, new object[] { typeof(DashMenu<MenuAction>), new DashMenu<MenuAction>(args.instance.ButtonContainer, args.module_list) });
+            };
         }
 
         protected override void OnUpdate() {
@@ -91,7 +98,7 @@ namespace KitchenDashPing {
             // Set the player collision mode to one that should be better suited for fast moving objects for the duration of the dash
             Rigidbody rigidBody = getRigidBody(player);
             if (rigidBody == null) {
-                Debug.LogError("[Dash Ping] " + "Could not get rigidbody");
+                Log("Could not get rigidbody", true);
                 return;
             }
             rigidBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
@@ -136,6 +143,20 @@ namespace KitchenDashPing {
                 return rigidBody;
             }
             return null;
+        }
+
+        [Conditional("DEBUG")]
+        public static void DebugLog(object message, [CallerFilePath] string callingFilePath = "", [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string caller = null) {
+            Log(message, false, callingFilePath, lineNumber, caller);
+        }
+
+        public static void Log(object message, bool error = false, [CallerFilePath] string callingFilePath = "", [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string caller = null) {
+            string logMessage = $"[{MOD_ID}] [{caller}({callingFilePath}:{lineNumber})] {message}";
+            if (error) {
+                Debug.LogError(logMessage);
+            } else {
+                Debug.Log(logMessage);
+            }
         }
     }
 }
