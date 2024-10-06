@@ -49,7 +49,7 @@ namespace KitchenDashPing {
         }
     }
 
-    public class DashSystemOvercooked : AbstractDashSystem{
+    public class DashSystemOvercooked : AbstractDashSystem {
 
         // shortest possible time between
         private const float DASH_COOLDOWN = 0.45f;
