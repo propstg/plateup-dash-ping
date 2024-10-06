@@ -2,9 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Linq;
 using UnityEngine;
-using Controllers;
 using Kitchen;
 using KitchenLib.Event;
 using KitchenLib.Utils;
@@ -21,16 +19,6 @@ namespace KitchenDashPing {
         public const string MOD_AUTHOR = "blargle";
         public static readonly string MOD_VERSION = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.ToString();
 
-        // shortest possible time between
-        private const float DASH_COOLDOWN = 0.45f;
-        // amount of time the dash force should be distributed over
-        private const float DASH_DURATION = 0.20f;
-        // total amount of force the dash should apply
-        // calculated to achieve the same distance as previous implementation
-        private const float DASH_TOTAL_FORCE = 2160f;
-
-        private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
-
         public DashSystem() : base(MOD_ID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, ">=1.2.0", Assembly.GetExecutingAssembly()) { }
 
         protected override void OnInitialise() {
@@ -46,13 +34,34 @@ namespace KitchenDashPing {
             };
         }
 
-        protected override void OnUpdate() {
-            if (DashFlavorType.OVERCOOKED == DashPreferences.getDashFlavor()) {
-                PlayerInfoManager.FindObjectsOfType<PlayerView>().ToList()
-                    .Where(isPingDownForPlayer).ToList()
-                    .ForEach(handleDashPressedForPlayer);
+        [Conditional("DEBUG")]
+        public static void DebugLog(object message, [CallerFilePath] string callingFilePath = "", [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string caller = null) {
+            Log(message, false, callingFilePath, lineNumber, caller);
+        }
+
+        public static void Log(object message, bool error = false, [CallerFilePath] string callingFilePath = "", [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string caller = null) {
+            string logMessage = $"[{MOD_ID}] [{caller}({callingFilePath}:{lineNumber})] {message}";
+            if (error) {
+                Debug.LogError(logMessage);
+            } else {
+                Debug.Log(logMessage);
             }
         }
+    }
+
+    public class DashSystemOvercooked : AbstractDashSystem{
+
+        // shortest possible time between
+        private const float DASH_COOLDOWN = 0.45f;
+        // amount of time the dash force should be distributed over
+        private const float DASH_DURATION = 0.20f;
+        // total amount of force the dash should apply
+        // calculated to achieve the same distance as previous implementation
+        private const float DASH_TOTAL_FORCE = 2160f;
+
+        private Dictionary<int, DashStatus> statuses = new Dictionary<int, DashStatus>();
+
+        protected override bool supports(DashFlavorType type) => DashFlavorType.OVERCOOKED == DashPreferences.getDashFlavor();
 
         private IEnumerator handleDecreasingCooldowns(PlayerView player) {
             int playerId = player.GetInstanceID();
@@ -75,7 +84,7 @@ namespace KitchenDashPing {
             }
         }
 
-        private void handleDashPressedForPlayer(PlayerView player) {
+        protected override void handleDashPressedForPlayer(PlayerView player) {
             int playerId = player.GetInstanceID();
 
             if (statuses.TryGetValue(playerId, out DashStatus status)) {
@@ -99,32 +108,13 @@ namespace KitchenDashPing {
             // Set the player collision mode to one that should be better suited for fast moving objects for the duration of the dash
             Rigidbody rigidBody = getRigidBody(player);
             if (rigidBody == null) {
-                Log("Could not get rigidbody", true);
+                DashSystem.Log("Could not get rigidbody", true);
                 return;
             }
             rigidBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 
             player.StartCoroutine(handleDecreasingCooldowns(player));
         }
-
-        private bool isPingDownForPlayer(PlayerView player) {
-            FieldInfo fieldInfo = ReflectionUtils.GetField<PlayerView>("Data");
-            PlayerView.ViewData viewData = (PlayerView.ViewData)fieldInfo.GetValue(player);
-            ButtonState pingButton = viewData.Inputs.State.SecondaryAction2;
-            ButtonState stopMovingButton = viewData.Inputs.State.StopMoving;
-
-            return isPingButtonPressedOrHeld(pingButton) && isStopMovingNotPressedOrHeld(stopMovingButton);
-        }
-
-        private bool isPingButtonPressedOrHeld(ButtonState pingButton) => isButtonPressed(pingButton) || isPingButtonHeldIfAllowed(pingButton);
-
-        private bool isPingButtonHeldIfAllowed(ButtonState pingButton) => DashPreferences.isHoldButton() && isButtonHeld(pingButton);
-
-        private bool isStopMovingNotPressedOrHeld(ButtonState stopMovingButton) => !isButtonPressed(stopMovingButton) && !isButtonHeld(stopMovingButton);
-
-        private bool isButtonPressed(ButtonState button) => button == ButtonState.Pressed;
-
-        private bool isButtonHeld(ButtonState button) => button == ButtonState.Held;
 
         private void dashForward(PlayerView player, float amount) {
             Rigidbody rigidBody = getRigidBody(player);
@@ -144,20 +134,6 @@ namespace KitchenDashPing {
                 return rigidBody;
             }
             return null;
-        }
-
-        [Conditional("DEBUG")]
-        public static void DebugLog(object message, [CallerFilePath] string callingFilePath = "", [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string caller = null) {
-            Log(message, false, callingFilePath, lineNumber, caller);
-        }
-
-        public static void Log(object message, bool error = false, [CallerFilePath] string callingFilePath = "", [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string caller = null) {
-            string logMessage = $"[{MOD_ID}] [{caller}({callingFilePath}:{lineNumber})] {message}";
-            if (error) {
-                Debug.LogError(logMessage);
-            } else {
-                Debug.Log(logMessage);
-            }
         }
     }
 }
