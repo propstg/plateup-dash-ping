@@ -4,11 +4,10 @@ using Controllers;
 using Kitchen;
 using KitchenLib.Utils;
 using KitchenDashPing.settings;
-using KitchenMods;
 
 namespace KitchenDashPing {
 
-    public abstract class AbstractDashSystem : GenericSystemBase, IModSystem {
+    public abstract class AbstractDashSystem : GenericSystemBase {
 
         /// <summary>
         /// the currently selected DashPreferences.getDashFlavor() value is passed to this method. if your system supports it, return true
@@ -53,5 +52,7 @@ namespace KitchenDashPing {
         private bool isButtonPressed(ButtonState button) => button == ButtonState.Pressed;
 
         private bool isButtonHeld(ButtonState button) => button == ButtonState.Held;
+
+        public AbstractDashSystem() { }
     }
 }

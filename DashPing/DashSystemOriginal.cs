@@ -2,10 +2,11 @@
 using System.Linq;
 using Kitchen;
 using KitchenDashPing.settings;
+using KitchenMods;
 
 namespace KitchenDashPing {
 
-    public class DashSystemOriginal : AbstractDashSystem {
+    public class DashSystemOriginal : AbstractDashSystem, IModSystem {
 
         private const float INITIAL_SPEED = 3000f;
         private const float DASH_SPEED = 12000f;

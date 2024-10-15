@@ -9,6 +9,7 @@ using KitchenLib.Utils;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using KitchenDashPing.settings;
+using KitchenMods;
 
 namespace KitchenDashPing {
 
@@ -49,7 +50,7 @@ namespace KitchenDashPing {
         }
     }
 
-    public class DashSystemOvercooked : AbstractDashSystem {
+    public class DashSystemOvercooked : AbstractDashSystem, IModSystem {
 
         // shortest possible time between
         private const float DASH_COOLDOWN = 0.45f;
