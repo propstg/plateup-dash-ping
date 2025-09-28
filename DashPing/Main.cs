@@ -43,9 +43,9 @@ namespace KitchenDashPing {
         public static void Log(object message, bool error = false, [CallerFilePath] string callingFilePath = "", [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string caller = null) {
             string logMessage = $"[{MOD_ID}] [{caller}({callingFilePath}:{lineNumber})] {message}";
             if (error) {
-                Debug.LogError(logMessage);
+                UnityEngine.Debug.LogError(logMessage);
             } else {
-                Debug.Log(logMessage);
+                UnityEngine.Debug.Log(logMessage);
             }
         }
     }
